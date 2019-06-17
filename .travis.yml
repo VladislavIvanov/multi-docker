@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t dockerlime/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run dockerlime/react-test npm run test -- --watchAll=false
+
+after_success:
+  - docker build -t dockerlime/multi-client ./client
+  - docker build -t dockerlime/multi-nginx ./nginx
+  - docker build -t dockerlime/multi-server ./server
+  - docker build -t dockerlime/multi-worker ./worker
+  # Log in the docker cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to the docker hub
+  - docker push dockerlime/multi-client
+  - docker push dockerlime/multi-nginx
+  - docker push dockerlime/multi-server
+  - docker push dockerlime/multi-worker
